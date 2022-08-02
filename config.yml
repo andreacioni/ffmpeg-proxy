@@ -1,0 +1,22 @@
+autoStopAfter: 60
+ffmpeg:
+  command: |
+    ffmpeg -fflags nobuffer \
+    -rtsp_transport tcp \
+    -i rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 \
+    -vsync 0 \
+    -copyts \
+    -vcodec copy \
+    -movflags frag_keyframe+empty_moov \
+    -an \
+    -hls_flags delete_segments+append_list \
+    -f segment \
+    -segment_list_flags live \
+    -segment_time 1 \
+    -segment_list_size 10 \
+    -segment_format mpegts \
+    -segment_list ${outputDir}/index.m3u8 \
+    -segment_list_type m3u8 \
+    -segment_wrap 100 \
+    ${outputDir}/%3d.ts
+  outputDir: "/Users/andreacioni/git/ffmpeg-proxy/test"
