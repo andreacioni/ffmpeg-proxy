@@ -7,12 +7,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type FFmpegConfig struct {
+	Command      string   `yaml:"command"`
+	Args         []string `yaml:"args"`
+	WaitForIndex int64    `yaml:"waitForIndex"`
+	IndexFile    string   `yaml:"indexFile"`
+}
 type Config struct {
-	AutoStopAfter int64 `yaml:"autoStopAfter"`
-	Ffmpeg        struct {
-		Command   string `yaml:"command"`
-		OutputDir string `yaml:"outputDir"`
-	} `yaml:"ffmepg"`
+	AutoStopAfter int64        `yaml:"autoStopAfter"`
+	ServePath     string       `yaml:"servePath"`
+	Ffmpeg        FFmpegConfig `yaml:"ffmpeg"`
 }
 
 func Load(filename string) (*Config, error) {

@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("failed to load config file: %+v\n", err)
 	}
 
-	ffmpeg.Init(cfg.Ffmpeg.OutputDir)
+	ffmpeg.Init(cfg.Ffmpeg)
 
 	resetTickChh := make(chan bool)
 	stopChn := make(chan bool)
@@ -39,8 +39,9 @@ func main() {
 				return
 			default:
 				if time.Now().Unix() > lastTick+cfg.AutoStopAfter {
-					ffmpeg.Stop()
-					lastTick = time.Now().Unix()
+					if ffmpeg.IsRunning() {
+						ffmpeg.Stop()
+					}
 				}
 				time.Sleep(1 * time.Second)
 			}
@@ -54,7 +55,7 @@ func main() {
 			resetTickChh <- true
 		}()
 
-		filename := filepath.Join(cfg.Ffmpeg.OutputDir, c.Param("path"))
+		filename := filepath.Join(cfg.ServePath, c.Param("path"))
 		ext := filepath.Ext(filename)
 
 		if ext == ".m3u8" {

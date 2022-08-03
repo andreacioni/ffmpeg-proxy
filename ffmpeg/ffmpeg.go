@@ -5,23 +5,22 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
+	"github.com/andreacioni/ffmpeg-proxy/config"
 	"github.com/andreacioni/ffmpeg-proxy/utils"
 )
 
-const waitTimeout = 2
+var (
+	ffmpegChnCmd      = make(chan bool)
+	ffmpegChnShutdown = make(chan bool)
+	ffmpegChnState    = make(chan error)
+	command           *exec.Cmd
+	cfg               config.FFmpegConfig
+)
 
-var ffmpegChnCmd = make(chan bool)
-var ffmpegChnShutdown = make(chan bool)
-var ffmpegChnState = make(chan error)
-
-var command *exec.Cmd
-var outputDirectory string
-
-func Init(basePath string) {
-	outputDirectory = basePath
+func Init(c config.FFmpegConfig) {
+	cfg = c
 	go ffmpeg()
 }
 
@@ -35,20 +34,26 @@ func Start() error {
 	return nil
 }
 
-func Stop() {
+func Stop() error {
 	ffmpegChnCmd <- false
+
+	if err := <-ffmpegChnState; err != nil {
+		return fmt.Errorf("ffmpeg failed to stop: %w", err)
+	}
+
+	return nil
 }
 
 func Close() {
 	ffmpegChnShutdown <- true
 }
 
-func ffmpegRunning() bool {
+func IsRunning() bool {
 	return command != nil && command.Process != nil
 }
 
 func ffmpegKill() error {
-	if !ffmpegRunning() {
+	if !IsRunning() {
 		log.Println("[ffmpeg] not running")
 		return nil
 	}
@@ -68,37 +73,36 @@ func ffmpegKill() error {
 }
 
 func ffmpegExec() error {
-	filename := filepath.Join(outputDirectory, "file.m3u8")
-
-	if ffmpegRunning() {
+	if IsRunning() {
 		log.Println("[ffmpeg] already running")
 		return nil
 	}
 
-	if utils.FileExists(filename) {
-		log.Printf("[ffmpeg] %s is present\n", filename)
-		if err := os.Remove(filename); err != nil {
-			log.Printf("[ffmpeg] %s can't be deleted\n", filename)
+	if utils.FileExists(cfg.IndexFile) {
+		log.Printf("[ffmpeg] %s is present\n", cfg.IndexFile)
+		if err := os.Remove(cfg.IndexFile); err != nil {
+			log.Printf("[ffmpeg] %s can't be deleted\n", cfg.IndexFile)
 			return err
 		}
-		log.Printf("[ffmpeg] %s deleted\n", filename)
+		log.Printf("[ffmpeg] %s deleted\n", cfg.IndexFile)
 	}
 
-	command = exec.Command("touch", filename)
+	command = exec.Command(cfg.Command, cfg.Args...)
 
 	if err := command.Start(); err != nil {
 		return err
 	}
 
-	waitEnd := time.Now().Unix() + waitTimeout
+	waitEnd := time.Now().Unix() + cfg.WaitForIndex
 	for time.Now().Unix() < waitEnd {
-		if utils.FileExists(filename) {
-			log.Printf("[ffmpeg] %s created, process is running\n", filename)
+		if utils.FileExists(cfg.IndexFile) {
+			log.Printf("[ffmpeg] %s created, process is running\n", cfg.IndexFile)
 			return nil
 		}
 	}
 
-	return fmt.Errorf("%s not found", filename)
+	ffmpegKill()
+	return fmt.Errorf("%s not found", cfg.IndexFile)
 }
 
 func ffmpeg() {
