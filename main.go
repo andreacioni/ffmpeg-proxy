@@ -70,7 +70,7 @@ func main() {
 		c.File(filename)
 	})
 
-	endless.ListenAndServe("0.0.0.0:8080", r)
+	endless.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", cfg.Port), r)
 }
 
 func contentTypeMap(ext string) string {

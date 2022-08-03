@@ -17,6 +17,7 @@ type Config struct {
 	AutoStopAfter int64        `yaml:"autoStopAfter"`
 	ServePath     string       `yaml:"servePath"`
 	Ffmpeg        FFmpegConfig `yaml:"ffmpeg"`
+	Port          int          `yaml:"port"`
 }
 
 func Load(filename string) (*Config, error) {
