@@ -84,8 +84,11 @@ func main() {
 
 func shutdownHook() {
 	fmt.Print("Shutdown hook...")
-	ffmpeg.Close()
-	fmt.Println("Done!")
+	if err := ffmpeg.Close(); err != nil {
+		fmt.Println("error closing ffmpeg: %w\n", err)
+	} else {
+		fmt.Println("Done!")
+	}
 }
 
 func contentTypeMap(ext string) string {

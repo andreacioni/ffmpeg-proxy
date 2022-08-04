@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	ffmpegChnCmd      = make(chan bool)
-	ffmpegChnShutdown = make(chan bool)
-	ffmpegChnState    = make(chan error)
-	command           *exec.Cmd
-	cfg               config.FFmpegConfig
+	ffmpegChnCmd           = make(chan bool)
+	ffmpegChnShutdown      = make(chan bool)
+	ffmpegChnShutdownState = make(chan error)
+	ffmpegChnState         = make(chan error)
+	command                *exec.Cmd
+	cfg                    config.FFmpegConfig
 )
 
 func Init(c config.FFmpegConfig) {
@@ -44,8 +45,10 @@ func Stop() error {
 	return nil
 }
 
-func Close() {
+func Close() error {
 	ffmpegChnShutdown <- true
+
+	return <-ffmpegChnShutdownState
 }
 
 func IsRunning() bool {
@@ -117,9 +120,7 @@ func ffmpeg() {
 		select {
 		case <-ffmpegChnShutdown:
 			log.Println("[ffmpeg] shuting down")
-			if err := ffmpegKill(); err != nil {
-				fmt.Printf("[ffmpeg] failed to shutdown: %+v", err)
-			}
+			ffmpegChnShutdownState <- ffmpegKill()
 			return
 		case s := <-ffmpegChnCmd:
 			log.Printf("[ffmpeg] received command: %t\n", s)
