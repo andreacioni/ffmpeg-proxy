@@ -117,7 +117,9 @@ func ffmpeg() {
 		select {
 		case <-ffmpegChnShutdown:
 			log.Println("[ffmpeg] shuting down")
-			ffmpegKill()
+			if err := ffmpegKill(); err != nil {
+				fmt.Printf("[ffmpeg] failed to shutdown: %+v", err)
+			}
 			return
 		case s := <-ffmpegChnCmd:
 			log.Printf("[ffmpeg] received command: %t\n", s)
