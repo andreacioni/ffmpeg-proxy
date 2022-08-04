@@ -67,14 +67,6 @@ func ffmpegKill() error {
 		log.Printf("[ffmpeg] process return error: %+v", err)
 	}
 
-	if command.ProcessState.ExitCode() != 0 {
-		if out, err := command.CombinedOutput(); err == nil {
-			log.Printf("[ffmpeg] output %s", string(out))
-		} else {
-			log.Printf("[ffmpeg] error print output %+v", err)
-		}
-	}
-
 	log.Printf("[ffmpeg] process exits with code: %d\n", command.ProcessState.ExitCode())
 
 	command = nil
