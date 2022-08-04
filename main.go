@@ -77,7 +77,7 @@ func main() {
 		srv.SignalHooks[endless.PRE_SIGNAL][syscall.SIGINT],
 		shutdownHook)
 
-	if err := srv.Serve(); err != nil {
+	if err := srv.ListenAndServe(); err != nil {
 		log.Printf("failed to start server: %+v\n", err)
 	}
 }
