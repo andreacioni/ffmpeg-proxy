@@ -1,6 +1,8 @@
+port: 8080
 autoStopAfter: 10
 servePath: /Users/andreacioni/git/ffmpeg-proxy/test
 ffmpeg:
+  debugOutput: false
   waitForIndex: 2
   indexFile: "/Users/andreacioni/git/ffmpeg-proxy/test/file.m3u8"
   command: touch
