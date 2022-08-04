@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/andreacioni/ffmpeg-proxy/config"
@@ -48,9 +49,11 @@ func main() {
 		}
 	}()
 
-	r := gin.Default()
+	router := gin.Default()
 
-	r.GET("/*path", func(c *gin.Context) {
+	srv := endless.NewServer(fmt.Sprintf(":%d", cfg.Port), router)
+
+	router.GET("/*path", func(c *gin.Context) {
 		go func() {
 			resetTickChh <- true
 		}()
@@ -70,7 +73,19 @@ func main() {
 		c.File(filename)
 	})
 
-	endless.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", cfg.Port), r)
+	srv.SignalHooks[endless.PRE_SIGNAL][syscall.SIGINT] = append(
+		srv.SignalHooks[endless.PRE_SIGNAL][syscall.SIGINT],
+		shutdownHook)
+
+	if err := srv.Serve(); err != nil {
+		log.Printf("failed to start server: %+v\n", err)
+	}
+}
+
+func shutdownHook() {
+	if err := ffmpeg.Stop(); err != nil {
+		fmt.Printf("failed to stop ffmpeg: %+v\n", err)
+	}
 }
 
 func contentTypeMap(ext string) string {
