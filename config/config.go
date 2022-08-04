@@ -8,6 +8,7 @@ import (
 )
 
 type FFmpegConfig struct {
+	DebugOutput  bool     `yaml:"debugOutput"`
 	Command      string   `yaml:"command"`
 	Args         []string `yaml:"args"`
 	WaitForIndex int64    `yaml:"waitForIndex"`

@@ -68,8 +68,10 @@ func ffmpegKill() error {
 	}
 
 	if command.ProcessState.ExitCode() != 0 {
-		if out, err := command.Output(); err == nil {
+		if out, err := command.CombinedOutput(); err == nil {
 			log.Printf("[ffmpeg] output %s", string(out))
+		} else {
+			log.Printf("[ffmpeg] error print output %+v", err)
 		}
 	}
 
@@ -95,6 +97,11 @@ func ffmpegExec() error {
 	}
 
 	command = exec.Command(cfg.Command, cfg.Args...)
+
+	if cfg.DebugOutput {
+		command.Stderr = os.Stderr
+		command.Stdout = os.Stdout
+	}
 
 	if err := command.Start(); err != nil {
 		return err
